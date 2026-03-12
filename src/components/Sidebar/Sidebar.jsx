@@ -123,7 +123,7 @@ export default function Sidebar({ onClose }) {
           <div
             className="flex items-center justify-between mb-[12px] lg:mb-[14px]
                        pl-[6px] lg:pl-[8px] cursor-pointer"
-            onClick={() => handleNavigate("history")}
+            onClick={() => handleNavigate("historylist")}
           >
             <div className="flex items-center gap-[8px]">
               <Clock size={14} className="lg:w-4 lg:h-4" />

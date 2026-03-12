@@ -1,8 +1,19 @@
 import { MessageSquare, Menu } from "lucide-react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { createConversationApi } from "../../api/chat"; 
 export default function HistoryPage() {
   const navigate = useNavigate();
   const { onMenuClick } = useOutletContext();
+
+  const handleNewChat = async () => {
+  try {
+    const res = await createConversationApi();
+    const { conversationId } = res.data;
+    navigate(`/app/chat/${conversationId}`);
+  } catch (err) {
+    console.error("Failed to start new chat:", err);
+  }
+};
 
   return (
     <div className="flex flex-col flex-1 h-screen bg-white overflow-hidden">
@@ -64,7 +75,7 @@ export default function HistoryPage() {
 
           {/* Button */}
           <button
-            onClick={() => navigate("/app/historylist")}
+             onClick={handleNewChat}
             className="bg-[#F54900] text-white rounded-[10px]
                        px-8 py-2 sm:px-10 sm:py-2.5 lg:px-12 lg:py-3
                        font-helvetica font-bold

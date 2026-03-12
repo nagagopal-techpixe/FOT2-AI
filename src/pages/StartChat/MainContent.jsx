@@ -2,7 +2,6 @@ import {
   ChevronLeft,
   Bookmark,
   Clock,
-  Download,
   Trash2,
   Share2,
   Send,
@@ -10,43 +9,159 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import useChat from "../../hooks/useChat";
+import { addBookmarkApi, removeBookmarkApi, checkBookmarkApi } from "../../api/bookmark";
+import { createConversationApi } from "../../api/chat";
+import { generateShareLinkApi, revokeShareLinkApi } from "../../api/Shareapi";
+
 export default function MainContent() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { conversationId: urlConversationId } = useParams(); // reads /app/chat/:conversationId
+
+  // ── Chat hook ──────────────────────────────────────────────────────────────
+  const {
+    messages,
+    conversationId,
+    isGenerating,
+    loading,
+    sendMessage,
+    loadConversation,
+    deleteConversation,
+  } = useChat();
+
+  // ── Local state ────────────────────────────────────────────────────────────
+  const [input, setInput] = useState("");
   const [showShare, setShowShare] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
+  const [title, setTitle] = useState("Untitled");
+  const [shareUrl, setShareUrl] = useState(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const bottomRef = useRef(null);
 
+  // ── On mount: load conversation if URL has conversationId ─────────────────
+  useEffect(() => {
+    if (urlConversationId) {
+      loadConversation(urlConversationId);
+      checkIfBookmarked(urlConversationId);
+    }
+  }, [urlConversationId]);
+
+  // ── Auto scroll to bottom on new message ──────────────────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isGenerating]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    setMessages((prev) => [...prev, { role: "user", text: input }]);
-    setInput("");
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: `Of course! I'd be delighted to help you create a song. To get started, I'll need a bit of information from you. Could you please provide me with the following:
+  // ── Update title from first user message ──────────────────────────────────
+  useEffect(() => {
+    if (messages.length > 0) {
+      const firstUserMsg = messages.find((m) => m.role === "user");
+      if (firstUserMsg) {
+        setTitle(
+          firstUserMsg.text.substring(0, 30) +
+            (firstUserMsg.text.length > 30 ? "..." : "")
+        );
+      }
+    }
+  }, [messages]);
 
-1. What is the overall mood or theme of the song? (e.g., love, friendship, adventure, etc.)
-2. What genre would you like the song to be? (e.g., pop, rock, ballad, etc.)
-3. Do you have any specific lyrics or phrases you'd like to include in the song?
-4. Is there any particular story or message you want the song to convey?
-
-Feel free to share any additional details that you think would be helpful for crafting your personalized song.`,
-        },
-      ]);
-    }, 2000);
+  // ── Check if already bookmarked ───────────────────────────────────────────
+  const checkIfBookmarked = async (convId) => {
+    try {
+      const res = await checkBookmarkApi(convId);
+      setIsBookmarked(res.data.isBookmarked);
+    } catch (err) {
+      console.error("checkBookmark error:", err);
+    }
   };
+
+  // ── Toggle bookmark ────────────────────────────────────────────────────────
+  const handleBookmark = async () => {
+    const convId = urlConversationId || conversationId;
+    if (!convId) return;
+
+    setBookmarkLoading(true);
+    try {
+      if (isBookmarked) {
+        await removeBookmarkApi(convId);
+        setIsBookmarked(false);
+      } else {
+        await addBookmarkApi(convId);
+        setIsBookmarked(true);
+      }
+    } catch (err) {
+      console.error("bookmark error:", err);
+    } finally {
+      setBookmarkLoading(false);
+    }
+  };
+
+  // ── Generate share link ────────────────────────────────────────────────────
+  const handleGenerateShare = async () => {
+    const convId = urlConversationId || conversationId;
+    if (!convId) return;
+    setShareLoading(true);
+    try {
+      const res = await generateShareLinkApi(convId);
+      setShareUrl(res.data.shareUrl);
+    } catch (err) {
+      console.error("generateShareLink error:", err);
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
+  // ── Copy share link ────────────────────────────────────────────────────────
+  const handleCopyLink = () => {
+    if (!shareUrl) return;
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // ── Send message ───────────────────────────────────────────────────────────
+  const handleSend = async () => {
+    if (!input.trim()) return;
+    const text = input;
+    setInput("");
+
+    let convId = urlConversationId || conversationId;
+
+    // No conversation yet - create one first then navigate
+    if (!convId) {
+      try {
+        const res = await createConversationApi();
+        convId = res.data.conversationId;
+        navigate(`/app/chat/${convId}`, { replace: true });
+      } catch (err) {
+        console.error("Failed to create conversation:", err);
+        return;
+      }
+    }
+
+    await sendMessage(text, convId);
+  };
+
+  // ── Delete conversation ────────────────────────────────────────────────────
+  const handleDelete = async () => {
+    const convId = urlConversationId || conversationId;
+    if (!convId) return;
+    await deleteConversation(convId);
+    navigate("/app/Dashboard");
+  };
+
+  // ── Loading state ──────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="flex flex-col flex-1 h-full bg-white items-center justify-center">
+        <div className="w-[11px] h-[11px] rounded-full bg-[#F54900] animate-pulse" />
+        <span className="text-[13px] font-helvetica mt-2">Loading...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col flex-1 h-full bg-white">
@@ -59,14 +174,17 @@ Feel free to share any additional details that you think would be helpful for cr
 
         {/* Left: back arrow + title */}
         <div className="flex items-center gap-[8px] lg:gap-[10px]">
-          <button className="w-[26px] h-[26px] flex items-center justify-center
-                             border-[1.5px] border-gray-500 rounded-[8px]"    onClick={() => navigate("/app/Dashboard")}>
+          <button
+            className="w-[26px] h-[26px] flex items-center justify-center
+                       border-[1.5px] border-gray-500 rounded-[8px]"
+            onClick={() => navigate("/app/Dashboard")}
+          >
             <ChevronLeft size={16} />
           </button>
           <span className="font-helvetica font-bold
                            text-[16px] sm:text-[18px] lg:text-[21.82px]
                            lg:leading-[8.82px] text-black">
-            Untitled
+            {title}
           </span>
         </div>
 
@@ -74,12 +192,21 @@ Feel free to share any additional details that you think would be helpful for cr
         <div className="hidden lg:flex items-center gap-[8px]">
 
           {/* Save to Bookmark */}
-          <button className="flex items-center gap-[7px]
-                             w-[203px] h-[40px] px-[18px]
-                             border border-[#00000026] rounded-[12px]
-                             text-[14px] font-helvetica font-normal bg-[#F7F7F7]">
-            <Bookmark size={14} />
-            <span>Save to Bookmark</span>
+          <button
+            onClick={handleBookmark}
+            disabled={bookmarkLoading}
+            className={`flex items-center gap-[7px]
+                        w-[203px] h-[40px] px-[18px]
+                        border border-[#00000026] rounded-[12px]
+                        text-[14px] font-helvetica font-normal
+                        transition-colors
+                        ${isBookmarked
+                          ? "bg-[#F54900] text-white"
+                          : "bg-[#F7F7F7] text-black"
+                        }`}
+          >
+            <Bookmark size={14} fill={isBookmarked ? "white" : "none"} />
+            <span>{isBookmarked ? "Bookmarked" : "Save to Bookmark"}</span>
           </button>
 
           {/* Save to Project */}
@@ -97,11 +224,16 @@ Feel free to share any additional details that you think would be helpful for cr
           <button className="w-[21.5px] h-[27.5px] flex items-center justify-center">
             <Clock size={15} />
           </button>
-          <button className="w-[21.5px] h-[27.5px] flex items-center justify-center"
-                  onClick={() => setShowShare(true)}>
+          <button
+            className="w-[21.5px] h-[27.5px] flex items-center justify-center"
+            onClick={() => setShowShare(true)}
+          >
             <Share2 size={15} />
           </button>
-          <button className="w-[21.5px] h-[27.5px] flex items-center justify-center">
+          <button
+            className="w-[21.5px] h-[27.5px] flex items-center justify-center"
+            onClick={handleDelete}
+          >
             <Trash2 size={15} />
           </button>
         </div>
@@ -115,44 +247,54 @@ Feel free to share any additional details that you think would be helpful for cr
             <MoreVertical size={20} />
           </button>
 
-          {/* Dropdown */}
           {showMobileMenu && (
-            <div className="absolute right-0 top-[36px] bg-white border border-gray-200
-                            rounded-[12px] shadow-lg z-50 w-[160px] py-2"
-                 onClick={() => setShowMobileMenu(false)}>
-                  <button className="flex items-center gap-[8px] w-full px-4 py-2
-                                 text-[11px] font-helvetica font-normal hover:bg-gray-50"
-                      onClick={() => setShowShare(true)}>
+            <div
+              className="absolute right-0 top-[36px] bg-white border border-gray-200
+                          rounded-[12px] shadow-lg z-50 w-[160px] py-2"
+              onClick={() => setShowMobileMenu(false)}
+            >
+              <button
+                className="flex items-center gap-[8px] w-full px-4 py-2
+                           text-[11px] font-helvetica font-normal hover:bg-gray-50"
+                onClick={() => setShowShare(true)}
+              >
                 <Share2 size={14} /> Share
               </button>
-            <hr className="border-0 h-[1px] bg-[#00000026]" />
+              <hr className="border-0 h-[1px] bg-[#00000026]" />
 
-              <button className="flex items-center gap-[8px] w-full px-4 py-2
-                                 text-[11px] font-helvetica font-normal hover:bg-gray-50">
+              <button
+                className="flex items-center gap-[8px] w-full px-4 py-2
+                           text-[11px] font-helvetica font-normal hover:bg-gray-50"
+                onClick={handleDelete}
+              >
                 <Trash2 size={14} /> Delete
               </button>
-            <hr className="border-0 h-[1px] bg-[#00000026]" />
+              <hr className="border-0 h-[1px] bg-[#00000026]" />
 
-                <button className="flex items-center gap-[8px] w-full px-4 py-2
+              <button className="flex items-center gap-[8px] w-full px-4 py-2
                                  text-[11px] font-helvetica font-normal hover:bg-gray-50">
                 <Clock size={14} /> History
               </button>
-            <hr className="border-0 h-[1px] bg-[#00000026]" />
-
-                 <button className="flex items-center gap-[8px] w-full px-4 py-2
-                                 text-[11px] font-helvetica font-normal hover:bg-gray-50">
-                <Clock size={14} /> Save to Project
-              </button>
-            <hr className="border-0 h-[1px] bg-[#00000026]" />
+              <hr className="border-0 h-[1px] bg-[#00000026]" />
 
               <button className="flex items-center gap-[8px] w-full px-4 py-2
                                  text-[11px] font-helvetica font-normal hover:bg-gray-50">
-                <Bookmark size={14} /> Save to Bookmark
+                <Clock size={14} /> Save to Project
               </button>
-           
-            
-              
-              
+              <hr className="border-0 h-[1px] bg-[#00000026]" />
+
+              <button
+                className="flex items-center gap-[8px] w-full px-4 py-2
+                           text-[11px] font-helvetica font-normal hover:bg-gray-50"
+                onClick={handleBookmark}
+              >
+                <Bookmark
+                  size={14}
+                  fill={isBookmarked ? "#F54900" : "none"}
+                  stroke={isBookmarked ? "#F54900" : "currentColor"}
+                />
+                {isBookmarked ? "Bookmarked" : "Save to Bookmark"}
+              </button>
             </div>
           )}
         </div>
@@ -198,7 +340,7 @@ Feel free to share any additional details that you think would be helpful for cr
       {/* Generating indicator */}
       {isGenerating && (
         <div className="flex items-center justify-center gap-[8px] py-[8px]">
-          <div className="w-[11px] h-[11px] rounded-full bg-[#F54900]" />
+          <div className="w-[11px] h-[11px] rounded-full bg-[#F54900] animate-pulse" />
           <span className="text-[12px] sm:text-[13px] lg:text-[14px] font-helvetica font-normal">
             Generating...
           </span>
@@ -225,10 +367,12 @@ Feel free to share any additional details that you think would be helpful for cr
         />
         <button
           onClick={handleSend}
+          disabled={isGenerating || !input.trim()}
           className="w-[40px] h-[40px] sm:w-[42px] sm:h-[42px] lg:w-[44px] lg:h-[44px]
                      flex items-center justify-center
                      bg-[#F54900] rounded-[12px]
-                     hover:bg-[#d13c08] transition-colors shrink-0"
+                     hover:bg-[#d13c08] transition-colors shrink-0
+                     disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Send size={14} className="text-white sm:w-[15px] sm:h-[15px]" />
         </button>
@@ -246,7 +390,6 @@ Feel free to share any additional details that you think would be helpful for cr
                         flex flex-col gap-[14px] border"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Title */}
             <h2 className="text-center
                            text-[18px] sm:text-[20px] md:text-[22px] lg:text-[26px]
                            p-[9px] font-clarendon font-medium">
@@ -254,10 +397,8 @@ Feel free to share any additional details that you think would be helpful for cr
             </h2>
             <hr className="border-0 h-[1px] bg-[#00000026]" />
 
-            {/* Description */}
             <p className="text-center font-helvetica font-normal
-                          text-[11px] sm:text-[12px] lg:text-[13px]
-                          px-2">
+                          text-[11px] sm:text-[12px] lg:text-[13px] px-2">
               Anyone with this link can access and view this conversation. You can{" "}
               <br className="hidden sm:block" />
               adjust the privacy settings using the lock option below.
@@ -281,7 +422,7 @@ Feel free to share any additional details that you think would be helpful for cr
                     <div className="bg-[#F54900] text-white
                                     text-[11px] sm:text-[12px] lg:text-[14px]
                                     font-helvetica font-normal
-                                    px-[10px] py-[5px] sm:px-[12px] sm:py-[6px] lg:px-[12px] lg:py-[6px]
+                                    px-[10px] py-[5px] sm:px-[12px] sm:py-[6px]
                                     rounded-[10px] max-w-[80%] lg:max-w-[260px]">
                       {msg.text}
                     </div>
@@ -303,26 +444,51 @@ Feel free to share any additional details that you think would be helpful for cr
             </div>
 
             {/* Meta */}
-            <div className="text-black
-                            px-[20px] sm:px-[28px] lg:px-[38px]">
-              <p className="font-helvetica font-normal
-                            text-[11px] sm:text-[12px] lg:text-[13px]">
-                Create a song
+            <div className="text-black px-[20px] sm:px-[28px] lg:px-[38px]">
+              <p className="font-helvetica font-normal text-[11px] sm:text-[12px] lg:text-[13px]">
+                {title}
               </p>
-              <p className="font-helvetica font-normal
-                            text-[11px] sm:text-[12px] lg:text-[13px]">
-                Username . 12 February 2026
+              <p className="font-helvetica font-normal text-[11px] sm:text-[12px] lg:text-[13px]">
+                {new Date().toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
               </p>
             </div>
 
-            {/* Button */}
-            <button className="w-[90%] sm:w-[480px] lg:w-[525px]
-                               h-[40px] sm:h-[42px] lg:h-[44px]
-                               mx-auto bg-[#F54900] text-white
-                               text-[12px] sm:text-[13px] lg:text-[14px]
-                               font-helvetica font-normal rounded-[12px]
-                               mb-[14px] sm:mb-[16px] lg:mb-[20px]">
-              Generate Share Link
+            {/* Show copy link box after share link is generated */}
+            {shareUrl && (
+              <div className="flex items-center gap-[8px]
+                              w-[90%] sm:w-[480px] lg:w-[525px] mx-auto
+                              border border-[#00000026] rounded-[12px]
+                              px-[12px] py-[10px] bg-[#F7F7F7]">
+                <p className="flex-1 truncate font-helvetica font-normal
+                              text-[11px] sm:text-[12px] lg:text-[13px] text-black">
+                  {shareUrl}
+                </p>
+                <button
+                  onClick={handleCopyLink}
+                  className="shrink-0 font-helvetica font-normal
+                             text-[11px] sm:text-[12px] lg:text-[13px]
+                             text-[#F54900]"
+                >
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={shareUrl ? handleCopyLink : handleGenerateShare}
+              disabled={shareLoading}
+              className="w-[90%] sm:w-[480px] lg:w-[525px]
+                         h-[40px] sm:h-[42px] lg:h-[44px]
+                         mx-auto bg-[#F54900] text-white
+                         text-[12px] sm:text-[13px] lg:text-[14px]
+                         font-helvetica font-normal rounded-[12px]
+                         mb-[14px] sm:mb-[16px] lg:mb-[20px]
+                         disabled:opacity-50 disabled:cursor-not-allowed">
+              {shareLoading ? "Generating..." : shareUrl ? (copied ? "Copied!" : "Copy Link") : "Generate Share Link"}
             </button>
           </div>
         </div>

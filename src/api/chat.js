@@ -13,9 +13,13 @@ export const getConversationApi = (conversationId) =>
   axiosInstance.get(`/api/conversations/${conversationId}`);
 
 // Get all conversations (history list)
-export const getAllConversationsApi = () =>
-  axiosInstance.get("/api/conversations");
+export const getAllConversationsApi = (search = "") =>
+  axiosInstance.get(`/api/conversations${search ? `?search=${search}` : ""}`);
 
 // Delete a conversation
 export const deleteConversationApi = (conversationId) =>
   axiosInstance.delete(`/api/conversations/${conversationId}`);
+
+// Clear all conversations
+export const clearAllConversationsApi = () =>
+  axiosInstance.delete("/api/conversations/clear");

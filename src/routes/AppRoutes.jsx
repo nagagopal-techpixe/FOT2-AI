@@ -22,7 +22,7 @@ import SetNewPassword from "../auth/SetNewPassword/SetNewPassword";
 import PasswordSuccess from "../auth/PasswordSuccess/PasswordSuccess";
 import GoogleSuccess from "../auth/GoogleSuccess/GoogleSuccess";
 import PaymentFailed from "../pages/PaymentFailed/PaymentFailed";
-
+import SharedConversationPage from "../pages/Sharedfile/Sharedconversationpage"
 
 function AppRoutes() {
   return (
@@ -41,13 +41,14 @@ function AppRoutes() {
         <Route path="/auth/google/failed" element={<PaymentFailed />} />
 
 
+
         {/* Protected Routes — login required */}
         <Route element={<ProtectedRoute />}>
           <Route path="/app" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="startchat" element={<StartChat />} />
-            {/* <Route path="/app/chat/:conversationId" element={<StartChat />} /> */}
+            <Route path="/app/chat/:conversationId" element={<StartChat />} />
             <Route path="history" element={<History />} />
             <Route path="historylist" element={<HistoryList />} />
             <Route path="bookmark" element={<Bookmark />} />
@@ -55,6 +56,7 @@ function AppRoutes() {
             <Route path="shared" element={<SharedFilePage />} />
             <Route path="success" element={<Success />} />
             <Route path="failed" element={<PaymentFailed />} />
+            
 
           </Route>
         </Route>
