@@ -71,7 +71,7 @@ function ToolCard({ title, active, icon }) {
   return (
     <div className="
       w-full
-      h-[110px] sm:h-[120px] md:h-[128px] lg:w-[284px] lg:h-[137px]
+      h-[110px] sm:h-[120px] md:h-[128px]  lg:h-[137px]
       bg-[#F3F4F6] rounded-[12px]
       p-[12px] sm:p-[14px] md:p-[16px] lg:p-[18px]
       relative cursor-pointer border border-gray-300
@@ -114,7 +114,7 @@ export default function PromptStudio() {
                     pt-3 sm:pt-4 lg:pt-4">
 
       <div className="
-        w-full lg:w-[893px]
+        w-full max-w-[893px] w-full
         h-auto lg:h-[188px]
         rounded-[8px] font-sans
       ">
@@ -136,7 +136,8 @@ export default function PromptStudio() {
         </div>
 
         {/* Cards */}
-        <div className="grid grid-cols-2 gap-[10px] sm:grid-cols-2 sm:gap-[12px] md:gap-[14px] lg:flex lg:gap-[16px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[12px] lg:gap-[16px]">
+        {/* <div className="grid grid-cols-2 gap-[10px] sm:grid-cols-2 sm:gap-[12px] md:gap-[14px] lg:flex lg:gap-[16px]"> */}
           <ToolCard title="Articles"        active icon={<ArticlesIcon active />} />
           <ToolCard title="Academic Writer"        icon={<AcademicIcon />} />
           <ToolCard title="Translate"              icon={<TranslateIcon />} />

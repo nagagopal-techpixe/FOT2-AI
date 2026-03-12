@@ -1,7 +1,42 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate,useLocation  } from "react-router-dom";
+import { useState } from "react";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function OtpVerification() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { verifyOtp } = useAuth();
+
+  const email = location.state?.email;
+
+  const [otp, setOtp] = useState(["", "", "", ""]);
+
+  const handleChange = (value, index) => {
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+  };
+
+const handleSubmit = async () => {
+  const code = otp.join("");
+
+  try {
+    const res = await verifyOtp({   // ✅ capture the response
+      email,
+      otp: code
+    });
+
+    navigate("/set-new-password", {
+      state: { 
+        email,
+        resetToken: res.resetToken   // ✅ pass the token
+      }
+    });
+
+  } catch (error) {
+    console.log(error);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F54900]
@@ -30,16 +65,16 @@ export default function OtpVerification() {
         </p>
 
         {/* OTP Boxes */}
-        <div className="flex justify-center gap-2 sm:gap-3 lg:gap-4 mb-3 sm:mb-4 lg:mb-4">
-          {[1, 2, 3, 4].map((_, index) => (
+      <div className="flex justify-center gap-3 mb-6">
+          {otp.map((digit, index) => (
             <input
               key={index}
+              value={digit}
               maxLength={1}
-              className="w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] lg:w-[64px] lg:h-[64px]
-                         bg-[#00000008] border border-[#0000001A] rounded-[12px]
-                         text-center font-bold font-helvetica
-                         text-[20px] sm:text-[24px] lg:text-[28px]
-                         focus:outline-none focus:ring-1 focus:ring-black"
+              onChange={(e) => handleChange(e.target.value, index)}
+              className="w-[56px] h-[56px] text-center text-[24px]
+                         bg-[#00000008] border border-[#0000001A]
+                         rounded-[12px] focus:outline-none"
             />
           ))}
         </div>
@@ -55,7 +90,7 @@ export default function OtpVerification() {
 
         {/* Button */}
         <button
-          onClick={() => navigate("/set-new-password")}
+        onClick={handleSubmit}
           className="w-full py-2
                      bg-[#F54900] text-white rounded-[10px]
                      font-helvetica font-bold

@@ -1,7 +1,24 @@
 import { useNavigate } from "react-router-dom";
-
+import { useAuth } from "../../hooks/useAuth";
+import { useState } from "react";
 export default function RestoreAccount() {
   const navigate = useNavigate();
+    const { requestOtp, loading } = useAuth();
+    const [email, setEmail] = useState("");
+     const handleRequestOtp = async () => {
+    if (!email) return;
+
+    try {
+      await requestOtp({ email });
+
+      navigate("/otp-verification", {
+        state: { email }
+      });
+
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F54900]
@@ -41,6 +58,8 @@ export default function RestoreAccount() {
         {/* Input */}
         <input
           type="email"
+            value={email}
+          onChange={(e) => setEmail(e.target.value)}
           placeholder="Your email address"
           className="w-full px-2 py-2
                      bg-[#00000008] border border-[#0000001A] rounded-[10px]
@@ -55,7 +74,8 @@ export default function RestoreAccount() {
 
         {/* Button */}
         <button
-          onClick={() => navigate("/otp-verification")}
+           onClick={handleRequestOtp}
+          disabled={loading}
           className="w-full py-2
                      mt-4 sm:mt-5 lg:mt-6
                      bg-[#F54900] text-white rounded-[10px]
@@ -63,7 +83,7 @@ export default function RestoreAccount() {
                      text-[13px] sm:text-[13px] md:text-[14px] lg:text-[14px]
                      tracking-[1px]"
         >
-          Request OTP Code
+        {loading ? "Sending OTP..." : "Request OTP Code"}
         </button>
 
       </div>

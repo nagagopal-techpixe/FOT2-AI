@@ -1,70 +1,113 @@
 import { useState } from "react";
+import { showSuccess, showError } from "../../utils/toast";
 import { Eye, EyeOff, Apple, Chrome, Facebook } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
-
+import { DiApple } from "react-icons/di";
+import { useAuth } from "../../hooks/useAuth";
 export default function FO2Login() {
   const navigate = useNavigate();
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
   const [staySignedIn, setStaySignedIn] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
-  const handleSignIn = () => {
-    setLoading(true);
-    setTimeout(() => setLoading(false), 1800);
-  };
+ const handleSignIn = async () => {
+  if (!termsAccepted) {
+  showError("Please accept Terms first");
+  return;
+}
+  try {
+    await login({
+      email,
+      password,
+    });
+
+    navigate("/app/dashboard");
+    showSuccess("Login successful");
+
+  } catch (err) {
+    showError(err?.response?.data?.message || "Login failed");
+  }
+};
 
   return (
     <>
       {/* Page wrapper */}
       <div className="flex min-h-screen">
 
-        {/* ─── LEFT PANEL (desktop only) ─────────────────────────────────── */}
-        <div className="hidden lg:flex w-[60%] bg-[#FF4500] flex-col items-center justify-between py-12 px-12 text-white relative">
-          {/* Background Glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#FF7B57] rounded-full blur-[100px] opacity-30"></div>
+        {/* ─── LEFT PANEL (desktop only) ─────────── */}
+   <div className="hidden lg:flex w-[60%] bg-[#FF4500] flex-col items-center justify-between py-12 px-12 text-white relative">
 
-          {/* Phone Container */}
-          <div className="relative w-[320px] h-[550px] mt-10 z-10">
-            <div className="absolute inset-0 bg-gradient-to-b from-white/100 via-white/30 to-transparent rounded-[2.5rem] flex items-center justify-center overflow-hidden">
-              <div className="w-[110px] h-[110px] bg-[#FF4400]
-                              text-black/40 text-[32px] font-extrabold
-                              flex items-center justify-center
-                              rounded-2xl mt-[-100px]
-                              tracking-[-0.5px]
-                              shadow-[0_8px_24px_rgba(0,0,0,0.18)] font-clarendon font-normal">
-                FO2
-              </div>
-              <div className="absolute top-0 w-full h-20 bg-gradient-to-b from-white/50 to-transparent"></div>
-            </div>
+  {/* Background Glow */}
+  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#FF7B57] rounded-full blur-[100px] opacity-30"></div>
 
-            {/* Side Buttons */}
-            <div className="absolute top-32 -left-[2px] w-[4px] h-10 bg-white/60 rounded-l"></div>
-            <div className="absolute top-44 -left-[2px] w-[4px] h-16 bg-white/60 rounded-l"></div>
-            <div className="absolute top-36 -right-[2px] w-[4px] h-20 bg-white/60 rounded-r"></div>
+  {/* Phone Container */}
+  <div className="relative w-[320px] h-[550px] mt-10 z-10">
 
-            {/* Chat Bubbles */}
-            <div className="absolute -left-20 top-12 bg-white text-black p-3 rounded-2xl rounded-bl-none shadow-2xl w-[240px] font-helvetica font-normal">
-              <p className="font-helvetica text-[13px] leading-tight font-medium">Hi, can you write a cinematic ad script for my brand</p>
-            </div>
-            <div className="absolute -right-24 top-[58%] bg-white text-black p-3 rounded-2xl rounded-br-none w-[220px] font-helvetica font-normal">
-              <p className="font-helvetica text-[13px] leading-tight font-medium">Build a studio-grade realism image prompt.</p>
-            </div>
-            <div className="absolute -left-10 bottom-20 bg-white text-black p-3 rounded-2xl rounded-bl-none shadow-2xl w-[200px] font-helvetica font-normal">
-              <p className="font-helvetica text-[13px] leading-tight font-medium">Design a luxury brand campaign concept.</p>
-            </div>
-          </div>
+    {/* Phone Frame */}
+    <div className="absolute inset-0 p-[14px] bg-gradient-to-b from-white/80 via-white/30 to-transparent rounded-[2.5rem]">
 
-          {/* Bottom Text */}
-          <div className="text-center z-10">
-            <h2 className="font-helvetica font-bold text-[26px] mb-3">Say Hello to FO2.AI</h2>
-            <p className="font-helvetica font-normal text-[13px] leading-[20px] tracking-normal max-w-sm">
-              Your intelligent prompt partner for images, videos, scripts, branding, and beyond.
-              Type your vision, and get high-performance prompts built for next-level AI creation.
-            </p>
-          </div>
+      <div className="w-full h-full bg-gradient-to-b from-white via-white/30 to-transparent rounded-[2rem] flex items-center justify-center overflow-hidden relative">
+
+        {/* Logo */}
+        <div className="w-[110px] h-[110px] bg-[#FF4400]
+                        text-black/40 text-[32px]
+                        flex items-center justify-center
+                        rounded-2xl mt-[-100px]
+                        tracking-[-0.5px]
+                        shadow-[0_8px_24px_rgba(0,0,0,0.18)]
+                        font-clarendon">
+          FO2
         </div>
+
+        {/* Top Fade */}
+        <div className="absolute top-0 w-full h-20 bg-gradient-to-b from-white/50 to-transparent"></div>
+
+      </div>
+    </div>
+
+    {/* Side Buttons (outside phone frame) */}
+    <div className="absolute top-32 -left-[8px] w-[8px] h-10 bg-white/60 rounded-l"></div>
+    <div className="absolute top-44 -left-[8px] w-[8px] h-16 bg-white/60 rounded-l"></div>
+    <div className="absolute top-36 -right-[8px] w-[8px] h-20 bg-white/60 rounded-r"></div>
+
+    {/* Chat Bubbles */}
+    <div className="absolute -left-20 top-12 bg-white text-black p-3 rounded-2xl rounded-bl-none shadow-2xl w-[240px] font-helvetica">
+      <p className="text-[13px] leading-tight font-medium">
+        Hi, can you write a cinematic ad script for my brand
+      </p>
+    </div>
+
+    <div className="absolute -right-24 top-[58%] bg-white text-black p-3 rounded-2xl rounded-br-none w-[220px] font-helvetica">
+      <p className="text-[13px] leading-tight font-medium">
+        Build a studio-grade realism image prompt.
+      </p>
+    </div>
+
+    <div className="absolute -left-10 bottom-20 bg-white text-black p-3 rounded-2xl rounded-bl-none shadow-2xl w-[200px] font-helvetica">
+      <p className="text-[13px] leading-tight font-medium">
+        Design a luxury brand campaign concept.
+      </p>
+    </div>
+
+  </div>
+
+  {/* Bottom Text */}
+  <div className="text-center z-10">
+    <h2 className="font-helvetica font-bold text-[26px] mb-3">
+      Say Hello to FO2.AI
+    </h2>
+
+    <p className="font-helvetica font-normal text-[13px] leading-[20px] tracking-normal max-w-sm">
+      Your intelligent prompt partner for images, videos, scripts, branding, and beyond.
+      Type your vision, and get high-performance prompts built for next-level AI creation.
+    </p>
+  </div>
+
+</div>
 
         {/* ─── RIGHT PANEL ──────────────────────────────────────────────── */}
         <div className="w-full lg:w-[40%] bg-white flex flex-col items-center justify-center
@@ -165,7 +208,8 @@ export default function FO2Login() {
                 >
                   <input
   type="radio"
-                    checked={staySignedIn}
+                  checked={termsAccepted}
+onChange={() => setTermsAccepted(!termsAccepted)}
 
   className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] lg:w-[21px] lg:h-[21px]
              border-2 border-gray-300 rounded-full
@@ -216,17 +260,29 @@ export default function FO2Login() {
                 <button className="w-[42px] h-[40px] sm:w-[44px] sm:h-[42px] lg:w-[47px] lg:h-[45px]
                                    bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors
                                    flex items-center justify-center">
-                  <Apple size={18} className="lg:w-5 lg:h-5" />
+                  {/* <Apple size={18} className="lg:w-5 lg:h-5" /> */}
+                    <DiApple size={22}/>
                 </button>
+          <button
+  onClick={() => window.location.href = "https://fotwo.bizmailo.com/api/auth/google"}
+  className="w-[42px] h-[40px] sm:w-[44px] sm:h-[42px] lg:w-[47px] lg:h-[45px]
+             bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors
+             flex items-center justify-center"
+>
+  <img
+    src="https://img.icons8.com/?size=100&id=17949&format=png&color=000000"
+    alt="google"
+    className="w-8 h-8"
+  />
+</button>
                 <button className="w-[42px] h-[40px] sm:w-[44px] sm:h-[42px] lg:w-[47px] lg:h-[45px]
                                    bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors
                                    flex items-center justify-center">
-                  <Chrome size={18} className="lg:w-5 lg:h-5" />
-                </button>
-                <button className="w-[42px] h-[40px] sm:w-[44px] sm:h-[42px] lg:w-[47px] lg:h-[45px]
-                                   bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors
-                                   flex items-center justify-center">
-                  <Facebook size={18} className="text-blue-600 lg:w-5 lg:h-5" />
+               <img
+  src="https://img.icons8.com/?size=100&id=118497&format=png&color=000000"
+  alt="Facebook"
+  className="w-8 h-8"
+/>
                 </button>
               </div>
             </div>
@@ -236,7 +292,7 @@ export default function FO2Login() {
                           text-center font-helvetica font-normal
                           text-[12px] sm:text-[13px] md:text-[13px] lg:text-[14px]">
               New here?{' '}
-              <span className="text-orange-500 cursor-pointer hover:underline">Join FO2.AI</span>
+              <span className="text-orange-500 cursor-pointer hover:underline"   onClick={() => navigate("/register")}>Join FO2.AI</span>
             </p>
 
           </div>

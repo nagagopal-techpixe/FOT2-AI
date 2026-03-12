@@ -1,6 +1,14 @@
 import { LogOut } from "lucide-react";
-
+import { useNavigate } from "react-router-dom";
 export default function LogoutModal({ onClose, onConfirm }) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => { 
+    localStorage.clear();
+    onConfirm?.();
+    onClose?.();
+    navigate("/login");
+  };
   return (
     <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-[9999]
                     px-4 sm:px-6">
@@ -49,7 +57,7 @@ export default function LogoutModal({ onClose, onConfirm }) {
             Cancel
           </button>
           <button
-            onClick={() => { onConfirm(); onClose(); }}
+                 onClick={handleLogout}
             className="flex-1
                        h-[34px] sm:h-[36px] lg:h-[38px]
                        bg-[#FF4400] hover:bg-[#d13c08] transition-colors

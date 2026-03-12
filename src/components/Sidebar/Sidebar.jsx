@@ -36,7 +36,7 @@ export default function Sidebar({ onClose }) {
         {/* Logo row + close btn on mobile */}
         <div className="flex items-center justify-between mb-6 sm:mb-7 lg:mb-8 pt-3 lg:pt-4">
           <h1 className="font-clarendon font-medium
-                         text-[18px] sm:text-[20px] lg:text-[21.82px]
+                         text-[18px] sm:text-[20px] lg:text-[21.82px] cursor-pointer
                          leading-[8.82px]"  onClick={() => navigate("/app/Dashboard")}>
             F02.AI
           </h1>
@@ -156,13 +156,13 @@ export default function Sidebar({ onClose }) {
                         font-helvetica font-normal
                         text-[12px] sm:text-[13px] lg:text-[14px]">
           <div
-            className="flex items-center gap-[8px] cursor-pointer"
+            className="flex items-center gap-[8px] cursor-pointer "
             onClick={() => handleNavigate("/app/project")}
           >
             <Grid size={14} className="lg:w-4 lg:h-4" />
             <span>Project</span>
           </div>
-          <div className="flex items-center gap-[8px]">
+          <div onClick={() => navigate("/app/shared")} className="cursor-pointer flex items-center gap-[8px]">
             <Share2 size={14} className="lg:w-4 lg:h-4" />
             <span>Shared Files</span>
           </div>

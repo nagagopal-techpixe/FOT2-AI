@@ -1,4 +1,22 @@
+import { useNavigate } from "react-router-dom";
+import { useState ,useEffect} from "react";
 export default function PasswordSuccess() {
+  const navigate = useNavigate();
+
+  const [countdown, setCountdown] = useState(5);
+  useEffect(() => {
+  const timer = setInterval(() => {
+    setCountdown((prev) => {
+      if (prev === 1) {
+        clearInterval(timer);
+        navigate("/login");
+      }
+      return prev - 1;
+    });
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, []);
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F54900]
                     px-4 sm:px-6 md:px-8">
@@ -44,7 +62,7 @@ export default function PasswordSuccess() {
         {/* Subtitle */}
         <p className="font-helvetica font-normal
                       text-[12px] sm:text-[13px] md:text-[13px] lg:text-[14px]">
-          Your account security has been refreshed. Redirecting you to the dashboard.
+          Your account security has been refreshed. Redirecting you to the login in <span className="font-bold text-[#F54900]">{countdown}s</span>
         </p>
 
       </div>
