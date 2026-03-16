@@ -12,6 +12,7 @@ const FO2Registration = () => {
   const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
+    username: "", 
     email: "",
     password: "",
     confirmPassword: "",
@@ -25,7 +26,11 @@ const FO2Registration = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-
+    
+if (!form.username) {
+  showError("Please enter username");
+  return;
+}
     if (!form.email) {
       showError("Please enter email");
       return;
@@ -53,6 +58,7 @@ const FO2Registration = () => {
 
     try {
       const res = await register({
+        username: form.username,
         email: form.email,
         password: form.password,
       });
@@ -65,6 +71,11 @@ const FO2Registration = () => {
   };
   const validate = () => {
     let newErrors = {};
+    if (!form.username) {
+  newErrors.username = "Username is required";
+} else if (form.username.length < 3) {
+  newErrors.username = "Username must be at least 3 characters";
+}
 
     const passwordRegex =
       /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -164,6 +175,25 @@ const FO2Registration = () => {
             </p>
 
             <form className="space-y-5" onSubmit={handleSubmit}>
+              <div>
+  <label className="block font-helvetica text-[14px] font-bold mb-1.5">
+    Username
+  </label>
+  <input
+    type="text"
+    name="username"
+    value={form.username}
+    onChange={handleChange}
+    placeholder="Choose a username"
+    className={`w-full px-2 py-2 bg-gray-50 border rounded-[10px]
+      ${errors.username ? "border-red-500" : "border-gray-200"}
+      font-helvetica font-normal text-[14px]
+      focus:outline-none focus:ring-1 focus:ring-black transition-all`}
+  />
+  {errors.username && (
+    <p className="text-red-500 text-xs mt-1">{errors.username}</p>
+  )}
+</div>
               {/* Email Field */}
               <div>
                 <label className="block font-helvetica text-[14px] font-bold mb-1.5">
@@ -180,6 +210,7 @@ const FO2Registration = () => {
              placeholder-helvetica placeholder:font-normal placeholder:text-[14px] placeholder:leading-[20px] placeholder:tracking-[0%]
              focus:outline-none focus:ring-1 focus:ring-black-500 transition-all"
                 />
+                
               </div>
 
               {/* Password Field */}

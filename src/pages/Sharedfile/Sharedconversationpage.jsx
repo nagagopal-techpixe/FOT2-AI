@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { User } from "lucide-react";
 import { getSharedConversationApi } from "../../api/Shareapi";
-
+import ReactMarkdown from "react-markdown"
 export default function SharedConversationPage() {
   const { shareToken } = useParams();
   const [conversation, setConversation] = useState(null);
@@ -95,12 +95,18 @@ export default function SharedConversationPage() {
                 <span className="text-white font-bold text-[10px]">AI</span>
               </div>
               <div className="max-w-[80%]">
-                <p className="font-helvetica font-normal text-black
-                              text-[12px] sm:text-[13px] lg:text-[14px]
-                              leading-[20px]">
-                  {msg.text}
-                </p>
-              </div>
+  <ReactMarkdown
+    components={{
+      p: ({ children }) => <p className="font-helvetica font-normal text-black text-[12px] sm:text-[13px] lg:text-[14px] leading-[20px] mb-[4px] last:mb-0">{children}</p>,
+      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+      ol: ({ children }) => <ol className="list-decimal pl-[16px] space-y-[2px]">{children}</ol>,
+      ul: ({ children }) => <ul className="list-disc pl-[16px] space-y-[2px]">{children}</ul>,
+      li: ({ children }) => <li className="text-[12px] sm:text-[13px] lg:text-[14px] leading-[20px]">{children}</li>,
+    }}
+  >
+    {msg.text}
+  </ReactMarkdown>
+</div>
             </div>
           )
         )}

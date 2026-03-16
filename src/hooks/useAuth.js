@@ -25,6 +25,10 @@ export const useAuth = () => {
       const res = await authApi.loginUser(data);
       localStorage.setItem("token", res.token);
        localStorage.setItem("userId", res.user.id);
+        localStorage.setItem("username", res.user.username);
+        localStorage.setItem("email", res.user.email);
+
+
       showSuccess(res.message || "Login successful");
       return res;
     } catch (err) {

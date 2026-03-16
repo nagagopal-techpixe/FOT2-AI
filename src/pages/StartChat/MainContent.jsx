@@ -8,18 +8,18 @@ import {
   User,
   MoreVertical,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import useChat from "../../hooks/useChat";
 import { addBookmarkApi, removeBookmarkApi, checkBookmarkApi } from "../../api/bookmark";
 import { createConversationApi } from "../../api/chat";
-import { generateShareLinkApi, revokeShareLinkApi } from "../../api/Shareapi";
+import { generateShareLinkApi } from "../../api/Shareapi";
 
 export default function MainContent() {
   const navigate = useNavigate();
-  const { conversationId: urlConversationId } = useParams(); // reads /app/chat/:conversationId
+  const { conversationId: urlConversationId } = useParams();
 
-  // ── Chat hook ──────────────────────────────────────────────────────────────
   const {
     messages,
     conversationId,
@@ -28,9 +28,9 @@ export default function MainContent() {
     sendMessage,
     loadConversation,
     deleteConversation,
+    resetChat,
   } = useChat();
 
-  // ── Local state ────────────────────────────────────────────────────────────
   const [input, setInput] = useState("");
   const [showShare, setShowShare] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -42,20 +42,23 @@ export default function MainContent() {
   const [copied, setCopied] = useState(false);
   const bottomRef = useRef(null);
 
-  // ── On mount: load conversation if URL has conversationId ─────────────────
+  // ✅ Single useEffect — no duplicate
   useEffect(() => {
     if (urlConversationId) {
       loadConversation(urlConversationId);
       checkIfBookmarked(urlConversationId);
+    } else {
+      resetChat();
+      setTitle("Untitled");
+      setIsBookmarked(false);
+      setShareUrl(null);
     }
   }, [urlConversationId]);
 
-  // ── Auto scroll to bottom on new message ──────────────────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isGenerating]);
 
-  // ── Update title from first user message ──────────────────────────────────
   useEffect(() => {
     if (messages.length > 0) {
       const firstUserMsg = messages.find((m) => m.role === "user");
@@ -68,7 +71,6 @@ export default function MainContent() {
     }
   }, [messages]);
 
-  // ── Check if already bookmarked ───────────────────────────────────────────
   const checkIfBookmarked = async (convId) => {
     try {
       const res = await checkBookmarkApi(convId);
@@ -78,11 +80,9 @@ export default function MainContent() {
     }
   };
 
-  // ── Toggle bookmark ────────────────────────────────────────────────────────
   const handleBookmark = async () => {
     const convId = urlConversationId || conversationId;
     if (!convId) return;
-
     setBookmarkLoading(true);
     try {
       if (isBookmarked) {
@@ -99,7 +99,6 @@ export default function MainContent() {
     }
   };
 
-  // ── Generate share link ────────────────────────────────────────────────────
   const handleGenerateShare = async () => {
     const convId = urlConversationId || conversationId;
     if (!convId) return;
@@ -114,7 +113,6 @@ export default function MainContent() {
     }
   };
 
-  // ── Copy share link ────────────────────────────────────────────────────────
   const handleCopyLink = () => {
     if (!shareUrl) return;
     navigator.clipboard.writeText(shareUrl);
@@ -122,15 +120,11 @@ export default function MainContent() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // ── Send message ───────────────────────────────────────────────────────────
   const handleSend = async () => {
     if (!input.trim()) return;
     const text = input;
     setInput("");
-
     let convId = urlConversationId || conversationId;
-
-    // No conversation yet - create one first then navigate
     if (!convId) {
       try {
         const res = await createConversationApi();
@@ -141,11 +135,9 @@ export default function MainContent() {
         return;
       }
     }
-
     await sendMessage(text, convId);
   };
 
-  // ── Delete conversation ────────────────────────────────────────────────────
   const handleDelete = async () => {
     const convId = urlConversationId || conversationId;
     if (!convId) return;
@@ -153,7 +145,44 @@ export default function MainContent() {
     navigate("/app/Dashboard");
   };
 
-  // ── Loading state ──────────────────────────────────────────────────────────
+  // ✅ Shared markdown components (no duplicate `li`)
+  const markdownComponents = {
+    p: ({ children }) => (
+      <p className="mb-[10px] last:mb-0 leading-[28px]">{children}</p>
+    ),
+    strong: ({ children }) => (
+      <strong className="font-semibold">{children}</strong>
+    ),
+    ol: ({ children }) => (
+      <ol className="list-decimal pl-[16px] space-y-[6px] mb-[8px]">
+        {children}
+      </ol>
+    ),
+    ul: ({ children }) => (
+      <ul className="list-disc pl-[16px] space-y-[6px] mb-[8px]">
+        {children}
+      </ul>
+    ),
+    li: ({ children }) => (
+      <li className="leading-[28px] mb-[4px]">{children}</li>
+    ),
+    pre: ({ children }) => (
+      <pre className="bg-[#E0E0E0] rounded-[8px] p-[10px] my-[8px] overflow-x-auto max-w-full text-[11px] leading-[20px] whitespace-pre-wrap break-words">
+        {children}
+      </pre>
+    ),
+    code: ({ inline, children }) =>
+      inline ? (
+        <code className="bg-[#E0E0E0] px-[7px] py-[1px] rounded text-[11px] break-words">
+          {children}
+        </code>
+      ) : (
+        <code className="text-[11px] break-words whitespace-pre-wrap font-mono">
+          {children}
+        </code>
+      ),
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col flex-1 h-full bg-white items-center justify-center">
@@ -164,7 +193,7 @@ export default function MainContent() {
   }
 
   return (
-    <div className="flex flex-col flex-1 h-full bg-white">
+    <div className="flex flex-col flex-1 h-full min-h-0 bg-white overflow-hidden">
 
       {/* ── Top Bar ── */}
       <div className="flex items-center justify-between
@@ -172,12 +201,12 @@ export default function MainContent() {
                       h-[56px] sm:h-[64px] lg:h-[80px]
                       border-b border-gray-300 shrink-0 relative">
 
-        {/* Left: back arrow + title */}
         <div className="flex items-center gap-[8px] lg:gap-[10px]">
+          {/* ✅ Back button now navigates */}
           <button
+            onClick={() => navigate(-1)}
             className="w-[26px] h-[26px] flex items-center justify-center
                        border-[1.5px] border-gray-500 rounded-[8px]"
-            onClick={() => navigate("/app/Dashboard")}
           >
             <ChevronLeft size={16} />
           </button>
@@ -188,28 +217,21 @@ export default function MainContent() {
           </span>
         </div>
 
-        {/* Right: action buttons — desktop only */}
+        {/* Desktop actions */}
         <div className="hidden lg:flex items-center gap-[8px]">
-
-          {/* Save to Bookmark */}
           <button
             onClick={handleBookmark}
             disabled={bookmarkLoading}
             className={`flex items-center gap-[7px]
                         w-[203px] h-[40px] px-[18px]
                         border border-[#00000026] rounded-[12px]
-                        text-[14px] font-helvetica font-normal
-                        transition-colors
-                        ${isBookmarked
-                          ? "bg-[#F54900] text-white"
-                          : "bg-[#F7F7F7] text-black"
-                        }`}
+                        text-[14px] font-helvetica font-normal transition-colors
+                        ${isBookmarked ? "bg-[#F54900] text-white" : "bg-[#F7F7F7] text-black"}`}
           >
             <Bookmark size={14} fill={isBookmarked ? "white" : "none"} />
             <span>{isBookmarked ? "Bookmarked" : "Save to Bookmark"}</span>
           </button>
 
-          {/* Save to Project */}
           <button className="flex items-center gap-[7px]
                              w-[203px] h-[40px] px-[18px]
                              border border-[#00000026] rounded-[12px]
@@ -218,10 +240,12 @@ export default function MainContent() {
             <span>Save to Project</span>
           </button>
 
-          {/* Divider */}
           <div className="w-[1px] h-[37px] border border-gray-300 mx-[4px]" />
 
-          <button className="w-[21.5px] h-[27.5px] flex items-center justify-center">
+          <button
+            onClick={() => navigate("/app/historylist")}
+            className="w-[21.5px] h-[27.5px] flex items-center justify-center"
+          >
             <Clock size={15} />
           </button>
           <button
@@ -238,7 +262,7 @@ export default function MainContent() {
           </button>
         </div>
 
-        {/* Right: three-dot menu — mobile/tablet only */}
+        {/* Mobile menu */}
         <div className="lg:hidden relative">
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
@@ -246,7 +270,6 @@ export default function MainContent() {
           >
             <MoreVertical size={20} />
           </button>
-
           {showMobileMenu && (
             <div
               className="absolute right-0 top-[36px] bg-white border border-gray-200
@@ -254,38 +277,32 @@ export default function MainContent() {
               onClick={() => setShowMobileMenu(false)}
             >
               <button
-                className="flex items-center gap-[8px] w-full px-4 py-2
-                           text-[11px] font-helvetica font-normal hover:bg-gray-50"
+                className="flex items-center gap-[8px] w-full px-4 py-2 text-[11px] font-helvetica font-normal hover:bg-gray-50"
                 onClick={() => setShowShare(true)}
               >
                 <Share2 size={14} /> Share
               </button>
               <hr className="border-0 h-[1px] bg-[#00000026]" />
-
               <button
-                className="flex items-center gap-[8px] w-full px-4 py-2
-                           text-[11px] font-helvetica font-normal hover:bg-gray-50"
+                className="flex items-center gap-[8px] w-full px-4 py-2 text-[11px] font-helvetica font-normal hover:bg-gray-50"
                 onClick={handleDelete}
               >
                 <Trash2 size={14} /> Delete
               </button>
               <hr className="border-0 h-[1px] bg-[#00000026]" />
-
-              <button className="flex items-center gap-[8px] w-full px-4 py-2
-                                 text-[11px] font-helvetica font-normal hover:bg-gray-50">
+              <button
+                onClick={() => navigate("/app/historylist")}
+                className="flex items-center gap-[8px] w-full px-4 py-2 text-[11px] font-helvetica font-normal hover:bg-gray-50"
+              >
                 <Clock size={14} /> History
               </button>
               <hr className="border-0 h-[1px] bg-[#00000026]" />
-
-              <button className="flex items-center gap-[8px] w-full px-4 py-2
-                                 text-[11px] font-helvetica font-normal hover:bg-gray-50">
+              <button className="flex items-center gap-[8px] w-full px-4 py-2 text-[11px] font-helvetica font-normal hover:bg-gray-50">
                 <Clock size={14} /> Save to Project
               </button>
               <hr className="border-0 h-[1px] bg-[#00000026]" />
-
               <button
-                className="flex items-center gap-[8px] w-full px-4 py-2
-                           text-[11px] font-helvetica font-normal hover:bg-gray-50"
+                className="flex items-center gap-[8px] w-full px-4 py-2 text-[11px] font-helvetica font-normal hover:bg-gray-50"
                 onClick={handleBookmark}
               >
                 <Bookmark
@@ -300,9 +317,9 @@ export default function MainContent() {
         </div>
       </div>
 
-      {/* ── Chat / Content Area ── */}
-      <div className="flex-1 overflow-y-auto
-                      px-[14px] py-[14px] sm:px-[18px] sm:py-[18px] lg:px-[24px] lg:py-[24px]
+      {/* ── Chat Area ── */}
+      <div className="flex-1 min-h-0 overflow-y-auto
+                      px-[14px] py-[14px] sm:px-[18px] sm:py-[18px] lg:px-[60px] lg:py-[24px]
                       space-y-[16px]">
         {messages.map((msg, i) =>
           msg.role === "user" ? (
@@ -312,11 +329,12 @@ export default function MainContent() {
                 <User size={14} className="lg:w-4 lg:h-4" />
               </div>
               <div className="bg-[#F54900] text-white
-                              text-[12px] sm:text-[13px] lg:text-[14px]
+                              text-[12px] sm:text-[13px] lg:text-[15px]
                               px-[12px] sm:px-[14px] lg:px-[16px]
-                              h-[36px] sm:h-[40px] lg:h-[44px]
-                              flex items-center rounded-[14px] max-w-[90%] lg:max-w-[600px]
-                              font-poppins font-normal">
+                              min-h-[36px] sm:min-h-[40px] lg:min-h-[44px]
+                              flex items-center rounded-[14px] max-w-[90%] lg:max-w-[70%]
+                              font-poppins font-normal py-[8px]
+                              break-words whitespace-pre-wrap overflow-hidden">
                 {msg.text}
               </div>
             </div>
@@ -326,10 +344,12 @@ export default function MainContent() {
                               rounded-full bg-[#E8430A] flex items-center justify-center shrink-0" />
               <div className="bg-[#F5F5F5] rounded-[14px]
                               px-[12px] py-[10px] sm:px-[14px] sm:py-[12px] lg:px-[16px] lg:py-[14px]
-                              max-w-[90%] lg:max-w-[600px]
-                              text-[12px] sm:text-[13px] lg:text-[14px]
-                              text-black font-helvetica font-normal leading-[22px]">
-                {msg.text}
+                              w-full max-w-[90%] lg:max-w-[75%]
+                              text-[12px] sm:text-[13px] lg:text-[15px]
+                              text-black font-helvetica font-normal leading-[34px]">
+                <ReactMarkdown components={markdownComponents}>
+                  {msg.text}
+                </ReactMarkdown>
               </div>
             </div>
           )
@@ -349,7 +369,7 @@ export default function MainContent() {
 
       {/* ── Bottom Input Bar ── */}
       <div className="flex items-center justify-center gap-[8px] sm:gap-[10px] lg:gap-[10px]
-                      px-[14px] sm:px-[18px] lg:px-0
+                      px-[14px] sm:px-[18px] lg:px-[60px]
                       py-[10px] sm:py-[12px] lg:py-[12px]">
         <input
           type="text"
@@ -357,7 +377,7 @@ export default function MainContent() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          className="w-full lg:w-[893px]
+          className="w-full
                      h-[40px] sm:h-[42px] lg:h-[44px]
                      border border-gray-300 rounded-[12px]
                      px-[12px] sm:px-[14px] lg:px-[16px]
@@ -385,20 +405,14 @@ export default function MainContent() {
           onClick={() => setShowShare(false)}
         >
           <div
-            className="bg-white rounded-[20px]
-                        w-full sm:w-[500px] lg:w-[597px]
-                        flex flex-col gap-[14px] border"
+            className="bg-white rounded-[20px] w-full sm:w-[500px] lg:w-[597px] flex flex-col gap-[14px] border"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-center
-                           text-[18px] sm:text-[20px] md:text-[22px] lg:text-[26px]
-                           p-[9px] font-clarendon font-medium">
+            <h2 className="text-center text-[18px] sm:text-[20px] md:text-[22px] lg:text-[26px] p-[9px] font-clarendon font-medium">
               Share chat link
             </h2>
             <hr className="border-0 h-[1px] bg-[#00000026]" />
-
-            <p className="text-center font-helvetica font-normal
-                          text-[11px] sm:text-[12px] lg:text-[13px] px-2">
+            <p className="text-center font-helvetica font-normal text-[11px] sm:text-[12px] lg:text-[13px] px-2">
               Anyone with this link can access and view this conversation. You can{" "}
               <br className="hidden sm:block" />
               adjust the privacy settings using the lock option below.
@@ -410,8 +424,7 @@ export default function MainContent() {
                             h-[180px] sm:h-[200px] lg:h-[238px]
                             p-[16px] sm:p-[20px] lg:p-[25px]
                             space-y-[14px] sm:space-y-[18px] lg:space-y-[20px]
-                            overflow-y-auto mx-auto
-                            mb-[12px] sm:mb-[16px] lg:mb-[20px]">
+                            overflow-y-auto mx-auto mb-[12px] sm:mb-[16px] lg:mb-[20px]">
               {messages.slice(0, 4).map((msg, i) =>
                 msg.role === "user" ? (
                   <div key={i} className="flex items-start gap-[8px] lg:gap-[10px]">
@@ -419,10 +432,8 @@ export default function MainContent() {
                                     rounded-full bg-[#0000000D] flex items-center justify-center shrink-0">
                       <User size={10} className="lg:w-3 lg:h-3" />
                     </div>
-                    <div className="bg-[#F54900] text-white
-                                    text-[11px] sm:text-[12px] lg:text-[14px]
-                                    font-helvetica font-normal
-                                    px-[10px] py-[5px] sm:px-[12px] sm:py-[6px]
+                    <div className="bg-[#F54900] text-white text-[11px] sm:text-[12px] lg:text-[14px]
+                                    font-helvetica font-normal px-[10px] py-[5px] sm:px-[12px] sm:py-[6px]
                                     rounded-[10px] max-w-[80%] lg:max-w-[260px]">
                       {msg.text}
                     </div>
@@ -431,12 +442,13 @@ export default function MainContent() {
                   <div key={i} className="flex items-start gap-[8px] lg:gap-[10px]">
                     <div className="w-[28px] h-[28px] sm:w-[30px] sm:h-[30px] lg:w-[34px] lg:h-[34px]
                                     rounded-full bg-[#F54900] shrink-0" />
-                    <div className="text-[11px] sm:text-[12px] lg:text-[12px]
-                                    text-black max-w-[80%] lg:max-w-[440px]
-                                    font-helvetica leading-[20px] whitespace-pre-line
+                    <div className="text-[11px] sm:text-[12px] lg:text-[12px] text-black
+                                    max-w-[80%] lg:max-w-[440px] font-helvetica
                                     bg-[#E8E8E8] rounded-[10px]
                                     px-[10px] py-[8px] sm:px-[12px] lg:px-[14px] lg:py-[10px]">
-                      {msg.text}
+                      <ReactMarkdown components={markdownComponents}>
+                        {msg.text}
+                      </ReactMarkdown>
                     </div>
                   </div>
                 )
@@ -457,21 +469,15 @@ export default function MainContent() {
               </p>
             </div>
 
-            {/* Show copy link box after share link is generated */}
             {shareUrl && (
-              <div className="flex items-center gap-[8px]
-                              w-[90%] sm:w-[480px] lg:w-[525px] mx-auto
-                              border border-[#00000026] rounded-[12px]
-                              px-[12px] py-[10px] bg-[#F7F7F7]">
-                <p className="flex-1 truncate font-helvetica font-normal
-                              text-[11px] sm:text-[12px] lg:text-[13px] text-black">
+              <div className="flex items-center gap-[8px] w-[90%] sm:w-[480px] lg:w-[525px] mx-auto
+                              border border-[#00000026] rounded-[12px] px-[12px] py-[10px] bg-[#F7F7F7]">
+                <p className="flex-1 truncate font-helvetica font-normal text-[11px] sm:text-[12px] lg:text-[13px] text-black">
                   {shareUrl}
                 </p>
                 <button
                   onClick={handleCopyLink}
-                  className="shrink-0 font-helvetica font-normal
-                             text-[11px] sm:text-[12px] lg:text-[13px]
-                             text-[#F54900]"
+                  className="shrink-0 font-helvetica font-normal text-[11px] sm:text-[12px] lg:text-[13px] text-[#F54900]"
                 >
                   {copied ? "Copied!" : "Copy"}
                 </button>
@@ -481,14 +487,18 @@ export default function MainContent() {
             <button
               onClick={shareUrl ? handleCopyLink : handleGenerateShare}
               disabled={shareLoading}
-              className="w-[90%] sm:w-[480px] lg:w-[525px]
-                         h-[40px] sm:h-[42px] lg:h-[44px]
-                         mx-auto bg-[#F54900] text-white
-                         text-[12px] sm:text-[13px] lg:text-[14px]
-                         font-helvetica font-normal rounded-[12px]
-                         mb-[14px] sm:mb-[16px] lg:mb-[20px]
-                         disabled:opacity-50 disabled:cursor-not-allowed">
-              {shareLoading ? "Generating..." : shareUrl ? (copied ? "Copied!" : "Copy Link") : "Generate Share Link"}
+              className="w-[90%] sm:w-[480px] lg:w-[525px] h-[40px] sm:h-[42px] lg:h-[44px]
+                         mx-auto bg-[#F54900] text-white text-[12px] sm:text-[13px] lg:text-[14px]
+                         font-helvetica font-normal rounded-[12px] mb-[14px] sm:mb-[16px] lg:mb-[20px]
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {shareLoading
+                ? "Generating..."
+                : shareUrl
+                ? copied
+                  ? "Copied!"
+                  : "Copy Link"
+                : "Generate Share Link"}
             </button>
           </div>
         </div>

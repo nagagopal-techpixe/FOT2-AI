@@ -180,11 +180,11 @@ export default function BookmarkPage() {
                 </div>
 
                 {/* Preview — 2 lines only */}
-                <p className="font-helvetica font-normal text-[#00000080] leading-[18px]
-                              text-[10px] sm:text-[11px] lg:text-[12px]
-                              line-clamp-2">
-                  {item.conversationId?.messages?.[0]?.text || "No preview available"}
-                </p>
+              <p className="font-helvetica font-normal text-[#00000080] leading-[18px]
+              text-[10px] sm:text-[11px] lg:text-[12px]
+              line-clamp-2">
+  {(item.conversationId?.messages?.[0]?.text || "No preview available").replace(/\*\*/g, "")}
+</p>
 
                 {/* Date */}
                 <p className="font-helvetica font-normal tracking-normal text-[#00000060] leading-[16px]

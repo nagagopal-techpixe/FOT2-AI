@@ -18,7 +18,8 @@ import { useState } from "react";
 export default function Sidebar({ onClose }) {
   const navigate = useNavigate();
   const [showProfile, setShowProfile] = useState(false);
-
+const userName = localStorage.getItem("username");
+const userEmail = localStorage.getItem("email");
   const handleNavigate = (path) => {
     navigate(path);
     onClose?.();
@@ -196,14 +197,14 @@ export default function Sidebar({ onClose }) {
                                 bg-white rounded-full flex items-center justify-center">
                   <User size={14} className="lg:w-4 lg:h-4" />
                 </div>
-                <div className="leading-tight">
-                  <p className="font-medium text-[12px] sm:text-[13px] lg:text-[14px]">
-                    User Name
-                  </p>
-                  <p className="text-[#00000080] text-[10px] sm:text-[11px] lg:text-[12px]">
-                    yourgmail@gmail.com
-                  </p>
-                </div>
+             <div className="leading-tight">
+  <p className="font-medium text-[12px] sm:text-[13px] lg:text-[14px]">
+    {userName}
+  </p>
+  <p className="text-[#00000080] text-[10px] sm:text-[11px] lg:text-[12px]">
+    {userEmail}
+  </p>
+</div>
               </div>
 
               {/* Right Arrow */}

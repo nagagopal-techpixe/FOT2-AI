@@ -15,6 +15,8 @@ export default function ProfilePopup({ onClose }) {
   const [showFAQ, setShowFAQ] = useState(false);
   const [showContact, setShowContact] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const userName = localStorage.getItem("username");
+const userEmail = localStorage.getItem("email");
 
   const menuItems = [
     { icon: <Crown size={16} />,      label: "Upgrade Plan",    onClick: () => setShowUpgrade(true) },
@@ -38,8 +40,8 @@ export default function ProfilePopup({ onClose }) {
             <User size={16} />
           </div>
           <div className="leading-tight">
-            <p className="text-[14px] font-Poppins font-normal">User Name</p>
-            <p className="text-[12px] font-Poppins text-[#00000080] leading-[16px]">yourgmail@gmail.com</p>
+            <p className="text-[14px] font-Poppins font-normal">{userName}</p>
+            <p className="text-[12px] font-Poppins text-[#00000080] leading-[16px]"> {userEmail}</p>
           </div>
         </div>
 

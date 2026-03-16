@@ -17,7 +17,13 @@ const useChat = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ── Create new conversation (called on "New Chat" click) ───────────────────
+  // ── Reset chat state ───────────────────────────────────────────────────────
+  const resetChat = useCallback(() => {
+    setMessages([]);
+    setConversationId(null);
+  }, []);
+
+  // ── Create new conversation ────────────────────────────────────────────────
   const startNewChat = useCallback(async () => {
     try {
       const res = await createConversationApi();
@@ -36,7 +42,6 @@ const useChat = () => {
     const targetId = convId || conversationId;
     if (!targetId || !text.trim()) return;
 
-    // Immediately show user message in UI
     const optimisticUserMsg = { role: "user", text };
     setMessages((prev) => [...prev, optimisticUserMsg]);
     setIsGenerating(true);
@@ -44,8 +49,6 @@ const useChat = () => {
     try {
       const res = await sendMessageApi(targetId, text);
       const { aiMessage } = res.data;
-
-      // Add AI reply to messages
       setMessages((prev) => [...prev, aiMessage]);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to send message.");
@@ -54,7 +57,7 @@ const useChat = () => {
     }
   }, [conversationId]);
 
-  // ── Load existing conversation (from bookmark or history) ──────────────────
+  // ── Load existing conversation ─────────────────────────────────────────────
   const loadConversation = useCallback(async (convId) => {
     setLoading(true);
     setError(null);
@@ -70,7 +73,7 @@ const useChat = () => {
     }
   }, []);
 
-  // ── Get all conversations (history) ───────────────────────────────────────
+  // ── Get all conversations ──────────────────────────────────────────────────
   const fetchAllConversations = useCallback(async () => {
     setLoading(true);
     try {
@@ -100,6 +103,7 @@ const useChat = () => {
     conversations,
     loading,
     error,
+    resetChat,
     startNewChat,
     sendMessage,
     loadConversation,

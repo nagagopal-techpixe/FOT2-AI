@@ -40,7 +40,8 @@ function AppRoutes() {
         <Route path="/auth/google/success" element={<GoogleSuccess />} />
         <Route path="/auth/google/failed" element={<PaymentFailed />} />
 
-
+{/* Public share route — no login needed */}
+<Route path="/share/:shareToken" element={<SharedConversationPage />} />
 
         {/* Protected Routes — login required */}
         <Route element={<ProtectedRoute />}>

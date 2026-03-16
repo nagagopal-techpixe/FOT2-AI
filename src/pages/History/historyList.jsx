@@ -3,6 +3,8 @@ import DeleteActivityModal from "../../components/modals/DeleteActivityModal";
 import { useState, useEffect } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { getAllConversationsApi, clearAllConversationsApi } from "../../api/chat";
+import ReactMarkdown from "react-markdown";
+
 
 const groupByDate = (conversations) => {
   const groups = {};
@@ -295,11 +297,19 @@ export default function HistoryList() {
                                       text-[13px] sm:text-[14px] lg:text-[16px]">
                           {item.title}
                         </p>
-                        <p className="font-helvetica font-normal truncate
-                                      text-[11px] sm:text-[12px] lg:text-[14px]
-                                      max-w-[200px] sm:max-w-[400px] md:max-w-[560px] lg:max-w-[700px]">
-                          {item.messages?.[0]?.text || "No preview available"}
-                        </p>
+  <div className="line-clamp-1 max-w-[200px] sm:max-w-[400px] md:max-w-[560px] lg:max-w-[700px]">
+  <ReactMarkdown
+    components={{
+      p: ({ children }) => <span className="font-helvetica font-normal text-[11px] sm:text-[12px] lg:text-[14px]">{children}</span>,
+      strong: ({ children }) => <span className="font-semibold">{children}</span>,
+      ol: ({ children }) => <span>{children}</span>,
+      ul: ({ children }) => <span>{children}</span>,
+      li: ({ children }) => <span>{children} </span>,
+    }}
+  >
+    {item.messages?.[0]?.text || "No preview available"}
+  </ReactMarkdown>
+</div>
                       </div>
                       <ChevronRight
                         width={15}

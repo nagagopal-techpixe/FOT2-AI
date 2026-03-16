@@ -5,10 +5,16 @@ export default function GoogleSuccess() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
     const userId = params.get("userId");
+    const username = params.get("username");
+    const email = params.get("email");
 
     if (token) {
       localStorage.setItem("token", token);
         localStorage.setItem("userId", userId);
+        localStorage.setItem("username", username);
+        localStorage.setItem("email", email);
+
+
       window.location.replace("/app/dashboard"); 
     } else {
       window.location.replace("/login");

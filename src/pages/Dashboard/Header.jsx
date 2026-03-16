@@ -1,6 +1,7 @@
 import { Menu } from "lucide-react";
 
 export default function Header({ onMenuClick }) {
+  const userName = localStorage.getItem("username");
   return (
     <>
       <div className="flex items-center mb-6 sm:mb-7 md:mb-8 lg:mb-10 relative">
@@ -19,7 +20,7 @@ export default function Header({ onMenuClick }) {
                        text-[16px] sm:text-[18px] md:text-[20px] lg:text-[21.82px]
                        leading-[8.82px]
                        ml-3 lg:ml-0">
-          Welcome back, [User Name]
+          Welcome back, {userName}
         </h2>
 
       </div>
