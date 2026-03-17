@@ -7,6 +7,8 @@ import {
   Send,
   User,
   MoreVertical,
+  Copy,
+  Check,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useState, useRef, useEffect } from "react";
@@ -40,9 +42,9 @@ export default function MainContent() {
   const [shareUrl, setShareUrl] = useState(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedMsgIndex, setCopiedMsgIndex] = useState(null);
   const bottomRef = useRef(null);
 
-  // ✅ Single useEffect — no duplicate
   useEffect(() => {
     if (urlConversationId) {
       loadConversation(urlConversationId);
@@ -120,6 +122,13 @@ export default function MainContent() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // ── Copy AI message ───────────────────────────────────────────────────────
+  const handleCopyMessage = (text, index) => {
+    navigator.clipboard.writeText(text);
+    setCopiedMsgIndex(index);
+    setTimeout(() => setCopiedMsgIndex(null), 2000);
+  };
+
   const handleSend = async () => {
     if (!input.trim()) return;
     const text = input;
@@ -145,7 +154,6 @@ export default function MainContent() {
     navigate("/app/Dashboard");
   };
 
-  // ✅ Shared markdown components (no duplicate `li`)
   const markdownComponents = {
     p: ({ children }) => (
       <p className="mb-[10px] last:mb-0 leading-[28px]">{children}</p>
@@ -202,7 +210,6 @@ export default function MainContent() {
                       border-b border-gray-300 shrink-0 relative">
 
         <div className="flex items-center gap-[8px] lg:gap-[10px]">
-          {/* ✅ Back button now navigates */}
           <button
             onClick={() => navigate(-1)}
             className="w-[26px] h-[26px] flex items-center justify-center
@@ -339,17 +346,47 @@ export default function MainContent() {
               </div>
             </div>
           ) : (
+            // ── AI Message ──
             <div key={i} className="flex items-start gap-[10px]">
               <div className="w-[30px] h-[30px] sm:w-[33px] sm:h-[33px] lg:w-[36px] lg:h-[36px]
                               rounded-full bg-[#E8430A] flex items-center justify-center shrink-0" />
-              <div className="bg-[#F5F5F5] rounded-[14px]
+
+              {/* AI card with copy button inside at bottom-right */}
+              <div className="relative bg-[#F5F5F5] rounded-[14px]
                               px-[12px] py-[10px] sm:px-[14px] sm:py-[12px] lg:px-[16px] lg:py-[14px]
                               w-full max-w-[90%] lg:max-w-[75%]
                               text-[12px] sm:text-[13px] lg:text-[15px]
                               text-black font-helvetica font-normal leading-[34px]">
+
+                {/* AI text */}
                 <ReactMarkdown components={markdownComponents}>
                   {msg.text}
                 </ReactMarkdown>
+
+                {/* ── Copy button — inside card, bottom-right ── */}
+                <div className="flex justify-end mt-[8px] pt-[8px] border-t border-[#00000010]">
+                  <button
+                    onClick={() => handleCopyMessage(msg.text, i)}
+                    className="flex items-center gap-[5px]
+                               px-[10px] py-[4px] rounded-[8px]
+                               bg-white border border-[#00000015]
+                               hover:border-[#F54900] hover:text-[#F54900]
+                               transition-colors text-[11px] font-helvetica text-gray-400"
+                  >
+                    {copiedMsgIndex === i ? (
+                      <>
+                        <Check size={11} className="text-[#F54900]" />
+                        <span className="text-[#F54900]">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={11} />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
               </div>
             </div>
           )
