@@ -1,9 +1,35 @@
 import { X, ImagePlus } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 export default function CreateProjectModal({ onClose, onCreate }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const fileRef = useRef(null);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImage(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    setImage(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const handleSubmit = async () => {
+    if (!title.trim()) return;
+    setLoading(true);
+    await onCreate({ title, description, image });
+    setLoading(false);
+  };
 
   return (
     <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50
@@ -39,26 +65,44 @@ export default function CreateProjectModal({ onClose, onCreate }) {
                         sm:px-[22px] sm:py-[20px] sm:gap-[11px]
                         lg:px-[28px] lg:py-[24px] lg:gap-[12px]">
 
-          {/* Drag & Drop */}
-          <div className="bg-[#FF44000F] border-[#E8430A]/40 rounded-[14px]
-                          h-[120px] sm:h-[140px] lg:h-[160px]
-                          flex flex-col items-center justify-center
-                          gap-[8px] sm:gap-[10px] lg:gap-[12px]
-                          cursor-pointer hover:bg-[#FFF0EB] transition-colors">
-            <div className="w-[40px] h-[40px] sm:w-[44px] sm:h-[44px] lg:w-[48px] lg:h-[48px]
-                            bg-white border border-[#E8430A]/30 rounded-[12px]
-                            flex items-center justify-center">
-              <ImagePlus
-                size={18}
-                className="text-[#E8430A] sm:w-[20px] sm:h-[20px] lg:w-[22px] lg:h-[22px]"
-                strokeWidth={1.5}
-              />
-            </div>
-            <p className="font-helvetica font-normal text-[#0000004D] text-center leading-[20px]
-                          text-[11px] sm:text-[12px] lg:text-[14px]">
-              Drag & Drop you image here,<br />or you can browse instead
-            </p>
+          {/* Drag & Drop / Image Upload */}
+          <div
+            onClick={() => fileRef.current?.click()}
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+            className="bg-[#FF44000F] border border-dashed border-[#E8430A]/40 rounded-[14px]
+                        h-[120px] sm:h-[140px] lg:h-[160px]
+                        flex flex-col items-center justify-center
+                        gap-[8px] sm:gap-[10px] lg:gap-[12px]
+                        cursor-pointer hover:bg-[#FFF0EB] transition-colors overflow-hidden"
+          >
+            {preview ? (
+              <img src={preview} alt="preview" className="w-full h-full object-cover" />
+            ) : (
+              <>
+                <div className="w-[40px] h-[40px] sm:w-[44px] sm:h-[44px] lg:w-[48px] lg:h-[48px]
+                                bg-white border border-[#E8430A]/30 rounded-[12px]
+                                flex items-center justify-center">
+                  <ImagePlus
+                    size={18}
+                    className="text-[#E8430A] sm:w-[20px] sm:h-[20px] lg:w-[22px] lg:h-[22px]"
+                    strokeWidth={1.5}
+                  />
+                </div>
+                <p className="font-helvetica font-normal text-[#0000004D] text-center leading-[20px]
+                              text-[11px] sm:text-[12px] lg:text-[14px]">
+                  Drag & Drop your image here,<br />or click to browse
+                </p>
+              </>
+            )}
           </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
+          />
 
           {/* Project Title */}
           <div className="flex flex-col gap-[6px] sm:gap-[7px] lg:gap-[8px]">
@@ -102,14 +146,16 @@ export default function CreateProjectModal({ onClose, onCreate }) {
           {/* Create Button */}
           <div className="flex justify-end">
             <button
-              onClick={() => { onCreate({ title, description }); onClose(); }}
+              onClick={handleSubmit}
+              disabled={!title.trim() || loading}
               className="h-[32px] sm:h-[34px] lg:h-[36px]
                          px-[32px] sm:px-[40px] lg:px-[48px]
                          bg-[#FF4400] hover:bg-[#d13c08] transition-colors
                          text-white font-helvetica font-bold rounded-[10px]
-                         text-[12px] sm:text-[13px] lg:text-[14px]"
+                         text-[12px] sm:text-[13px] lg:text-[14px]
+                         disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create
+              {loading ? "Creating..." : "Create"}
             </button>
           </div>
 

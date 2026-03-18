@@ -128,7 +128,7 @@ export default function HistoryList() {
           className="text-[11px] sm:text-[12px] lg:text-[14px]
                      font-helvetica font-normal text-[#FF4400] cursor-pointer"
         >
-          Clear hist
+        Clear History
         </p>
       </div>
 

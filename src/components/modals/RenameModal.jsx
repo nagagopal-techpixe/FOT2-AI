@@ -3,6 +3,14 @@ import { useState } from "react";
 
 export default function RenameModal({ onClose, onRename }) {
   const [title, setTitle] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleRename = async () => {
+    if (!title.trim()) return;
+    setLoading(true);
+    await onRename(title.trim());
+    setLoading(false);
+  };
 
   return (
     <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50
@@ -44,9 +52,10 @@ export default function RenameModal({ onClose, onRename }) {
 
           <input
             type="text"
-            placeholder="Song"
+            placeholder="New project name"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleRename()}
             className="h-[38px] sm:h-[40px] lg:h-[44px]
                        bg-[#FF44000F] rounded-[10px]
                        px-[12px] lg:px-[14px]
@@ -70,15 +79,17 @@ export default function RenameModal({ onClose, onRename }) {
               Cancel
             </button>
             <button
-              onClick={() => { onRename(title); onClose(); }}
+              onClick={handleRename}
+              disabled={!title.trim() || loading}
               className="flex-1
                          h-[34px] sm:h-[36px] lg:h-[38px]
                          bg-[#FF4400] text-white
                          text-[12px] sm:text-[13px] lg:text-[14px]
                          font-helvetica font-bold rounded-[12px]
-                         hover:bg-[#d13c08] transition-colors"
+                         hover:bg-[#d13c08] transition-colors
+                         disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Ok
+              {loading ? "Saving..." : "Ok"}
             </button>
           </div>
 

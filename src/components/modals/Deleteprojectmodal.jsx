@@ -1,6 +1,15 @@
 import { Trash2 } from "lucide-react";
+import { useState } from "react";
 
 export default function DeleteProjectModal({ onClose, onConfirm }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleDelete = async () => {
+    setLoading(true);
+    await onConfirm();
+    setLoading(false);
+  };
+
   return (
     <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50
                     px-4 sm:px-6">
@@ -49,15 +58,17 @@ export default function DeleteProjectModal({ onClose, onConfirm }) {
             Cancel
           </button>
           <button
-            onClick={() => { onConfirm(); onClose(); }}
+            onClick={handleDelete}
+            disabled={loading}
             className="flex-1
                        h-[34px] sm:h-[36px] lg:h-[38px]
                        bg-[#FF4400] hover:bg-[#d13c08] transition-colors
                        text-white
                        text-[12px] sm:text-[13px] lg:text-[14px]
-                       font-helvetica font-bold rounded-[10px]"
+                       font-helvetica font-bold rounded-[10px]
+                       disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Yes, Delete
+            {loading ? "Deleting..." : "Yes, Delete"}
           </button>
         </div>
 

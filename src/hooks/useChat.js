@@ -38,24 +38,40 @@ const useChat = () => {
   }, [navigate]);
 
   // ── Send message + get AI reply ────────────────────────────────────────────
-  const sendMessage = useCallback(async (text, convId) => {
-    const targetId = convId || conversationId;
-    if (!targetId || !text.trim()) return;
+ const sendMessage = useCallback(async (formData, convId) => {
+  const targetId = convId || conversationId;
 
-    const optimisticUserMsg = { role: "user", text };
-    setMessages((prev) => [...prev, optimisticUserMsg]);
-    setIsGenerating(true);
+  const text = formData.get("text");
+  const image = formData.get("image");
+    // ✅ Add these logs
+  console.log("targetId:", targetId);
+  console.log("text:", text);
+  console.log("image:", image);
 
-    try {
-      const res = await sendMessageApi(targetId, text);
-      const { aiMessage } = res.data;
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to send message.");
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [conversationId]);
+
+  if (!targetId || (!text && !image)) return;
+
+  // optimistic UI
+  const optimisticUserMsg = {
+    role: "user",
+    text: text || "",
+    image: image ? URL.createObjectURL(image) : null,
+  };
+
+  setMessages((prev) => [...prev, optimisticUserMsg]);
+  setIsGenerating(true);
+
+  try {
+    // ✅ pass text and image separately — NOT formData
+    const res = await sendMessageApi(targetId, text, image);
+    const { aiMessage } = res.data;
+    setMessages((prev) => [...prev, aiMessage]);
+  } catch (err) {
+    setError(err.response?.data?.message || "Failed to send message.");
+  } finally {
+    setIsGenerating(false);
+  }
+}, [conversationId]);
 
   // ── Load existing conversation ─────────────────────────────────────────────
   const loadConversation = useCallback(async (convId) => {

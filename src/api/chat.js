@@ -5,8 +5,24 @@ export const createConversationApi = (title = "Untitled") =>
   axiosInstance.post("/conversations/create", { title });
 
 // Send a message and get AI reply
-export const sendMessageApi = (conversationId, text) =>
-  axiosInstance.post(`/conversations/${conversationId}/message`, { text });
+export const sendMessageApi = (conversationId, text, image) => {
+  const formData = new FormData();
+  formData.append("text", text);
+
+  if (image) {
+    formData.append("image", image); // 👈 name must match multer
+  }
+
+  return axiosInstance.post(
+    `/conversations/${conversationId}/message`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+};
 
 // Get full conversation with all messages (used when opening from bookmark/history)
 export const getConversationApi = (conversationId) =>
