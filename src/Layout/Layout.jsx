@@ -27,8 +27,6 @@ function Layout() {
       >
         <Sidebar onClose={() => setSidebarOpen(false)} />
       </div>
-
-      {/* ── Right Content ── */}
       {/* overflow-hidden here — child handles its own scroll */}
       <div className="flex-1 overflow-hidden bg-white flex flex-col">
         <Outlet context={{ onMenuClick: () => setSidebarOpen(true) }} />

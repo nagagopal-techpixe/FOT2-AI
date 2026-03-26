@@ -1,12 +1,28 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+const isTokenValid = (token) => {
+  if (!token) return false;
+  try {
+    const { exp } = JSON.parse(atob(token.split(".")[1]));
+    return Date.now() < exp * 1000;
+  } catch {
+    return false;
+  }
+};
+
 export default function Splash() {
   const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate("/register");
+      const token = localStorage.getItem("token");
+      if (isTokenValid(token)) {
+        navigate("/app/dashboard", { replace: true }); // ✅ token valid → go to dashboard
+      } else {
+        localStorage.removeItem("token");              // clear expired token
+        navigate("/register", { replace: true });      // ✅ no token → go to register
+      }
     }, 3000);
     return () => clearTimeout(timer);
   }, []);
@@ -35,7 +51,7 @@ export default function Splash() {
         FO2
       </h1>
 
-      {/* Bottom Loader — always visible on mobile now ✅ */}
+      {/* Bottom Loader — always visible on mobile now */}
       <div className="absolute bottom-8 sm:bottom-9 lg:bottom-10
                       w-[120px] sm:w-[133px] lg:w-[147px]
                       h-[28px] sm:h-[30px] lg:h-[33px]

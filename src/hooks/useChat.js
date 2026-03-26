@@ -17,13 +17,13 @@ const useChat = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ── Reset chat state ───────────────────────────────────────────────────────
+  // ── Reset chat state
   const resetChat = useCallback(() => {
     setMessages([]);
     setConversationId(null);
   }, []);
 
-  // ── Create new conversation ────────────────────────────────────────────────
+  // ── Create new conversation
   const startNewChat = useCallback(async () => {
     try {
       const res = await createConversationApi();
@@ -37,43 +37,53 @@ const useChat = () => {
     }
   }, [navigate]);
 
-  // ── Send message + get AI reply ────────────────────────────────────────────
- const sendMessage = useCallback(async (formData, convId) => {
-  const targetId = convId || conversationId;
+  // ── Send message + get AI reply
+  const sendMessage = useCallback(async (formData, convId) => {
+    const targetId = convId || conversationId;
+    const text = formData.get("text") || "";
+    const imageFiles = formData.getAll("images"); // array of File objects
 
-  const text = formData.get("text");
-  const image = formData.get("image");
-    // ✅ Add these logs
-  console.log("targetId:", targetId);
-  console.log("text:", text);
-  console.log("image:", image);
+    if (!targetId || (!text.trim() && imageFiles.length === 0)) return;
 
+    // 1. Optimistic update — show user message immediately with blob previews
+    const optimisticUserMsg = {
+      role: "user",
+      text: text.trim(),
+      imageUrls: imageFiles.map((f) => URL.createObjectURL(f)),
+      _optimistic: true,
+    };
+    setMessages((prev) => [...prev, optimisticUserMsg]);
+    setIsGenerating(true);
 
-  if (!targetId || (!text && !image)) return;
+    try {
+      // 2. Send to API
+      const res = await sendMessageApi(targetId, text, imageFiles);
+      const { userMessage, aiMessage } = res.data;
 
-  // optimistic UI
-  const optimisticUserMsg = {
-    role: "user",
-    text: text || "",
-    image: image ? URL.createObjectURL(image) : null,
-  };
+      // 3. Normalize imageUrls for consistent rendering
+      const realUserMsg = {
+        ...userMessage,
+        imageUrls: userMessage.imageUrls || [],
+      };
 
-  setMessages((prev) => [...prev, optimisticUserMsg]);
-  setIsGenerating(true);
+      // 4. Replace optimistic msg with real user msg + AI reply
+      setMessages((prev) => [
+        ...prev.slice(0, -1), // remove optimistic
+        realUserMsg,
+        { ...aiMessage, imageUrls: [] },
+      ]);
 
-  try {
-    // ✅ pass text and image separately — NOT formData
-    const res = await sendMessageApi(targetId, text, image);
-    const { aiMessage } = res.data;
-    setMessages((prev) => [...prev, aiMessage]);
-  } catch (err) {
-    setError(err.response?.data?.message || "Failed to send message.");
-  } finally {
-    setIsGenerating(false);
-  }
-}, [conversationId]);
+      setConversationId(targetId);
+    } catch (err) {
+      // Remove optimistic message on failure
+      setMessages((prev) => prev.filter((m) => !m._optimistic));
+      setError(err.response?.data?.message || "Failed to send message.");
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [conversationId]);
 
-  // ── Load existing conversation ─────────────────────────────────────────────
+  // ── Load existing conversation
   const loadConversation = useCallback(async (convId) => {
     setLoading(true);
     setError(null);
@@ -81,7 +91,13 @@ const useChat = () => {
       const res = await getConversationApi(convId);
       const { conversation } = res.data;
       setConversationId(conversation._id);
-      setMessages(conversation.messages);
+
+      // Normalize imageUrls so JSX can use msg.imageUrls everywhere
+      const mapped = (conversation.messages || []).map((m) => ({
+        ...m,
+        imageUrls: m.imageUrls || [],
+      }));
+      setMessages(mapped);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load conversation.");
     } finally {
@@ -89,7 +105,7 @@ const useChat = () => {
     }
   }, []);
 
-  // ── Get all conversations ──────────────────────────────────────────────────
+  // ── Get all conversations
   const fetchAllConversations = useCallback(async () => {
     setLoading(true);
     try {
@@ -102,7 +118,7 @@ const useChat = () => {
     }
   }, []);
 
-  // ── Delete conversation ────────────────────────────────────────────────────
+  // ── Delete conversation
   const deleteConversation = useCallback(async (convId) => {
     try {
       await deleteConversationApi(convId);

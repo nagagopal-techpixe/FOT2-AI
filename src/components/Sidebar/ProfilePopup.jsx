@@ -10,13 +10,13 @@ import UpgradePlanModal from "../modals/UpgradePlanModal";
 
 export default function ProfilePopup({ onClose }) {
   const [showLogout, setShowLogout] = useState(false);
-  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);  
   const [showTerms, setShowTerms] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
   const [showContact, setShowContact] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const userName = localStorage.getItem("username");
-const userEmail = localStorage.getItem("email");
+  const userEmail = localStorage.getItem("email");
 
   const menuItems = [
     { icon: <Crown size={16} />,      label: "Upgrade Plan",    onClick: () => setShowUpgrade(true) },

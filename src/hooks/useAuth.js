@@ -27,6 +27,8 @@ export const useAuth = () => {
        localStorage.setItem("userId", res.user.id);
         localStorage.setItem("username", res.user.username);
         localStorage.setItem("email", res.user.email);
+// localStorage.setItem("plan", user.plan);
+        
 
 
       showSuccess(res.message || "Login successful");

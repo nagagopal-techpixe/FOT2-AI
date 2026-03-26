@@ -20,7 +20,7 @@ export default function SetNewPassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false); // 👁️ NEW
 
   const handleSubmit = async () => {
-    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
 
     let newErrors = {};
 

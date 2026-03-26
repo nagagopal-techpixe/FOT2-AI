@@ -69,33 +69,34 @@ if (!form.username) {
       showError(err.response?.data?.message || "Something went wrong");
     }
   };
-  const validate = () => {
-    let newErrors = {};
-    if (!form.username) {
-  newErrors.username = "Username is required";
-} else if (form.username.length < 3) {
-  newErrors.username = "Username must be at least 3 characters";
-}
+ const validate = () => {
+  let newErrors = {};
+  if (!form.username) {
+    newErrors.username = "Username is required";
+  } else if (form.username.length < 3) {
+    newErrors.username = "Username must be at least 3 characters";
+  }
 
-    const passwordRegex =
-      /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  // ✅ Updated regex — accepts ALL special characters
+  const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
 
-    if (!form.password) {
-      newErrors.password = "Password is required";
-    } else if (!passwordRegex.test(form.password)) {
-      newErrors.password =
-        "Password must contain 8 characters, 1 uppercase, 1 number and 1 symbol";
-    }
+  if (!form.password) {
+    newErrors.password = "Password is required";
+  } else if (!passwordRegex.test(form.password)) {
+    newErrors.password =
+      "Password must contain 8 characters, 1 uppercase, 1 number and 1 symbol";
+  }
 
-    if (!form.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password";
-    } else if (form.password !== form.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
+  if (!form.confirmPassword) {
+    newErrors.confirmPassword = "Please confirm your password";
+  } else if (form.password !== form.confirmPassword) {
+    newErrors.confirmPassword = "Passwords do not match";
+  }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
+
   return (
     <div className="flex min-h-screen font-sans">
       <div className="hidden lg:flex w-[60%] bg-[#FF4500] flex-col items-center justify-between py-12 px-12 text-white relative">

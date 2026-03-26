@@ -4,13 +4,15 @@ import axiosInstance from "./axiosInstance";
 export const createConversationApi = (title = "Untitled") =>
   axiosInstance.post("/conversations/create", { title });
 
-// Send a message and get AI reply
-export const sendMessageApi = (conversationId, text, image) => {
+// Send a message and get AI reply — accepts single File, File[], or null
+export const sendMessageApi = (conversationId, text, images) => {
   const formData = new FormData();
   formData.append("text", text);
 
-  if (image) {
-    formData.append("image", image); // 👈 name must match multer
+  if (images) {
+    // Normalize: single File → array, so we always loop
+    const files = Array.isArray(images) ? images : [images];
+    files.forEach((file) => formData.append("images", file)); // matches uploadChat.array("images", 10)
   }
 
   return axiosInstance.post(

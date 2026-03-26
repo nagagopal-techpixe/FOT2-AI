@@ -65,7 +65,7 @@ export default function PaymentFailed() {
             >
               Try Again
             </button>
-            <button
+            {/* <button
               onClick={() => navigate("/app/dashboard")}
               className="w-[200px] sm:w-[220px] lg:w-[245px]
                          h-[32px] sm:h-[34px] lg:h-[36px]
@@ -74,7 +74,7 @@ export default function PaymentFailed() {
                          text-[12px] sm:text-[13px] lg:text-[14px]"
             >
               Back to Dashboard
-            </button>
+            </button> */}
           </div>
 
         </div>
