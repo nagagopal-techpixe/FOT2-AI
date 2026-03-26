@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "../Layout/Layout";
 import ProtectedRoute from "./Protectedroute";
-import PremiumRoute from "./PremiumRoute";
 
 // Pages
 import Dashboard from "../pages/Dashboard/Dashboard";
@@ -14,7 +13,7 @@ import SharedFilePage from "../pages/Sharedfile/Sharedfilepage";
 import Success from "../pages/Success/Success";
 import PaymentFailed from "../pages/PaymentFailed/PaymentFailed";
 import SharedConversationPage from "../pages/Sharedfile/Sharedconversationpage";
-import ProjectDetail from "../pages/Project/Projectdetail"; 
+import ProjectDetail from "../pages/Project/Projectdetail";
 
 // Auth
 import Splash from "../auth/Splash/Splash";
@@ -31,7 +30,7 @@ function AppRoutes() {
     <BrowserRouter>
       <Routes>
 
-        {/* ── Public / Auth Routes ── */}
+        {/* ── Public / Auth ── */}
         <Route path="/" element={<Splash />} />
         <Route path="/register" element={<FO2Registration />} />
         <Route path="/login" element={<FO2Login />} />
@@ -42,30 +41,26 @@ function AppRoutes() {
         <Route path="/auth/google/success" element={<GoogleSuccess />} />
         <Route path="/auth/google/failed" element={<PaymentFailed />} />
 
-        {/* ── Public Share Route ── */}
+        {/* ── Public Share ── */}
         <Route path="/share/:shareToken" element={<SharedConversationPage />} />
 
-        {/* ── Protected Routes (login required) ── */}
+        {/* ── Protected (login required) ── */}
         <Route element={<ProtectedRoute />}>
           <Route path="/app" element={<Layout />}>
-
-            {/* Free — all logged-in users */}
             <Route index element={<Dashboard />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="success" element={<Success />} />
             <Route path="failed" element={<PaymentFailed />} />
 
-            {/* Premium — shows UpgradePlanModal if plan === "free" */}
-            <Route element={<PremiumRoute />}>
-              <Route path="startchat" element={<StartChat />} />
-              <Route path="/app/chat/:conversationId" element={<StartChat />} />
-              <Route path="history" element={<History />} />
-              <Route path="historylist" element={<HistoryList />} />
-              <Route path="bookmark" element={<Bookmark />} />
-              <Route path="project" element={<Project />} />
-              <Route path="project/:projectId" element={<ProjectDetail />} />
-              <Route path="shared" element={<SharedFilePage />} />
-            </Route>
+            {/* 🔹 No PremiumRoute wrapper — backend handles access */}
+            <Route path="startchat" element={<StartChat />} />
+            <Route path="/app/chat/:conversationId" element={<StartChat />} />
+            <Route path="history" element={<History />} />
+            <Route path="historylist" element={<HistoryList />} />
+            <Route path="bookmark" element={<Bookmark />} />
+            <Route path="project" element={<Project />} />
+            <Route path="project/:projectId" element={<ProjectDetail />} />
+            <Route path="shared" element={<SharedFilePage />} />
           </Route>
         </Route>
 
